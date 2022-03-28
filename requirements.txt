@@ -1,0 +1,22 @@
+# From PyPI
+dask
+diffpy.structure
+diffsims
+hyperspy
+importlib_metadata
+jupyterlab
+kikuchipy >= 0.5.7
+matplotlib
+matplotlib_scalebar
+morphops
+numpy
+orix>=0.8
+pandas
+pyebsdindex
+PyQt5
+scipy
+scikit-image
+tqdm
+
+# From GitHub
+mapregions @ git+https://github.com/hakonanes/mapregions@main
