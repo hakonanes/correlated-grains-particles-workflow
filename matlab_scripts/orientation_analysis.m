@@ -1,5 +1,8 @@
 clear variables, close all
 
+% Generate figures?
+to_plot = 1;
+
 % MTEX configuration
 plotx2east
 plotzIntoPlane
@@ -14,7 +17,8 @@ cs_al = cs{2};
 ssO = specimenSymmetry('orthorhombic');
 
 % Directory and file names
-dir_data = '/home/hakon/phd/data/p/prover/300c/3';
+dir_data = '/home/hakon/phd/data/p/prover/300c/1';
+disp(dir_data)
 dir_kp = fullfile(dir_data, 'kp');
 dir_mtex = fullfile(dir_data, 'mtex');
 fname_ori = 'xmap_refori2.ang';
@@ -99,58 +103,66 @@ bin_edges = [mat hab max(mori)];
 [~, ~, gb2Id] = histcounts(mori, 'NumBins', 2, 'BinEdges', bin_edges);
 
 %% Plot GNDs, boundaries and particles
-figure
-plot(ebsd, ebsd.gnd, 'micronBar', 'off')
-mtexColorMap LaboTeX
-caxis([1e12 1e15])
-hold on
-plot(ebsd('notIndexed'), 'facecolor', 'k')
-plot(gb2(gb2Id == 1), 'linecolor', [0.7 0.7 0.7], 'linewidth', 1)
-plot(gb2(gb2Id == 2), 'linecolor', [0 0 0], 'linewidth', 1);
-legend('hide')
-hold off
-export_fig(fullfile(dir_mtex, 'maps_gnd_gb.png'), res)
+if to_plot
+    figure
+    plot(ebsd, ebsd.gnd, 'micronBar', 'off')
+    mtexColorMap LaboTeX
+    caxis([1e12 1e15])
+    hold on
+    plot(ebsd('notIndexed'), 'facecolor', 'k')
+    plot(gb2(gb2Id == 1), 'linecolor', [0.7 0.7 0.7], 'linewidth', 1)
+    plot(gb2(gb2Id == 2), 'linecolor', [0 0 0], 'linewidth', 1);
+    legend('hide')
+    hold off
+    export_fig(fullfile(dir_mtex, 'maps_gnd_gb.png'), res)
+end
 
 %% Plot GNDs (denoised), boundaries and particles
-figure
-plot(ebsd, ebsd.gnd_denoise, 'micronBar', 'off')
-caxis([1e12 1e15])
-mtexColorMap LaboTeX
-hold on
-plot(ebsd('notIndexed'), 'facecolor', 'k')
-plot(gb2(gb2Id == 1), 'linecolor', [0.7 0.7 0.7], 'linewidth', 1)
-plot(gb2(gb2Id == 2), 'linecolor', [0 0 0], 'linewidth', 1);
-legend('hide')
-hold off
-export_fig(fullfile(dir_mtex, 'maps_gnd_denoise_gb.png'), res)
+if to_plot
+    figure
+    plot(ebsd, ebsd.gnd_denoise, 'micronBar', 'off')
+    caxis([1e12 1e15])
+    mtexColorMap LaboTeX
+    hold on
+    plot(ebsd('notIndexed'), 'facecolor', 'k')
+    plot(gb2(gb2Id == 1), 'linecolor', [0.7 0.7 0.7], 'linewidth', 1)
+    plot(gb2(gb2Id == 2), 'linecolor', [0 0 0], 'linewidth', 1);
+    legend('hide')
+    hold off
+    export_fig(fullfile(dir_mtex, 'maps_gnd_denoise_gb.png'), res)
+end
 
-%% Orientation maps
-directions = {xvector, yvector, zvector};
-titles = {'nd', 'rd', 'td'};
-for i=1:length(directions)
-    om_al.inversePoleFigureDirection = directions{i};
+%% Plot orientation maps
+if to_plot
+    directions = {xvector, yvector, zvector};
+    titles = {'nd', 'rd', 'td'};
+    for i=1:length(directions)
+        om_al.inversePoleFigureDirection = directions{i};
+        figure
+        plot(ebsd('al'), om_al.orientation2color(ebsd('al').orientations),...
+            'micronBar', 'off')
+        hold on
+        plot(ebsd('notIndexed'), 'facecolor', 'k')
+        legend('hide')
+        hold off
+        export_fig(fullfile(dir_mtex, ['maps_om_ipf_' titles{i} '.png']), res)
+    end
+end
+
+%% Plot RD orientation map with grain boundaries overlayed
+if to_plot
+    om_al.inversePoleFigureDirection = yvector;
     figure
     plot(ebsd('al'), om_al.orientation2color(ebsd('al').orientations),...
         'micronBar', 'off')
     hold on
     plot(ebsd('notIndexed'), 'facecolor', 'k')
+    plot(gb2(gb2Id == 1), 'linecolor', [0.7 0.7 0.7], 'linewidth', 1)
+    plot(gb2(gb2Id == 2), 'linecolor', [0 0 0], 'linewidth', 1);
     legend('hide')
     hold off
-    export_fig(fullfile(dir_mtex, ['maps_om_ipf_' titles{i} '.png']), res)
+    export_fig(fullfile(dir_mtex, 'maps_om_ipf_rd_gb.png'), res)
 end
-
-%% RD orientation map with grain boundaries overlayed
-om_al.inversePoleFigureDirection = yvector;
-figure
-plot(ebsd('al'), om_al.orientation2color(ebsd('al').orientations),...
-    'micronBar', 'off')
-hold on
-plot(ebsd('notIndexed'), 'facecolor', 'k')
-plot(gb2(gb2Id == 1), 'linecolor', [0.7 0.7 0.7], 'linewidth', 1)
-plot(gb2(gb2Id == 2), 'linecolor', [0 0 0], 'linewidth', 1);
-legend('hide')
-hold off
-export_fig(fullfile(dir_mtex, 'maps_om_ipf_rd_gb.png'), res)
 
 %% Ideal orientations
 % Ideal grain texture components, rotated to match the global reference
@@ -171,18 +183,19 @@ ideal_markers = {'d', '^', 'p', 's', 's', '>', 'o'};
 ideal_oris_labels = {'br', 'cu',  's', 'cube', 'cubend', 'p', 'goss'};
 n_ideal = length(ideal_oris);
 
-%% Inverse pole figure key with components annotated
-om_al.inversePoleFigureDirection = yvector; % RD
-
-figure
-plot(om_al)
-hold on
-ms = 20;
-for i=1:length(ideal_oris)
-    annotate(ideal_oris{i}, 'marker', ideal_markers{i}, 'markersize',...
-        ms, 'markerfacecolor', ideal_colors{i});
+%% Plot inverse pole figure key with components annotated
+if to_plot
+    om_al.inversePoleFigureDirection = yvector; % RD
+    figure
+    plot(om_al)
+    hold on
+    ms = 20;
+    for i=1:length(ideal_oris)
+        annotate(ideal_oris{i}, 'marker', ideal_markers{i}, 'markersize',...
+            ms, 'markerfacecolor', ideal_colors{i});
+    end
+    export_fig(fullfile(dir_mtex, 'ipf_annotated.png'), '-r600')
 end
-export_fig(fullfile(dir_mtex, 'ipf_annotated.png'), '-r600')
 
 %% Assign a texture component to each grain (without overlap)
 mori_threshold_deg = 15;
@@ -217,23 +230,25 @@ grains2.prop.ideal_ori = ideal_ori;
 grains2.prop.ideal_ori_id = ideal_ori_id;
 
 %% Plot of grains with grain boundaries per component
-figure
-for i=1:n_ideal
-    grains_i = grains2(ismember(grains2.ideal_ori_id, i));
-    if ~isempty(grains_i)
-        plot(grains_i, 'facecolor', ideal_colors{i}, 'micronBar', 'off')
+if to_plot
+    figure
+    for i=1:n_ideal
+        grains_i = grains2(ismember(grains2.ideal_ori_id, i));
+        if ~isempty(grains_i)
+            plot(grains_i, 'facecolor', ideal_colors{i}, 'micronBar', 'off')
+        end
+        hold on
     end
-    hold on
+    plot(ebsd('notIndexed'), 'facecolor', 'k')
+    plot(gb2(gb2Id == 1), 'linecolor', [0.7 0.7 0.7], 'linewidth', 1)
+    plot(gb2(gb2Id == 2), 'linecolor', [0 0 0], 'linewidth', 1)
+    legend('hide')
+    export_fig(fullfile(dir_mtex, 'maps_grains_ideal_particles.png'), res)
 end
-plot(ebsd('notIndexed'), 'facecolor', 'k')
-plot(gb2(gb2Id == 1), 'linecolor', [0.7 0.7 0.7], 'linewidth', 1)
-plot(gb2(gb2Id == 2), 'linecolor', [0 0 0], 'linewidth', 1)
-legend('hide')
-export_fig(fullfile(dir_mtex, 'maps_grains_ideal_particles.png'), res)
 
 %% ---------------------------------- DISPERSOIDS CLOSE TO GRAIN BOUNDARIES
 distance_threshold = dx; % um
-distance_considered = 1; % um. Sufficiently large, typically ECD dependent
+distance_considered = 2; % um. Sufficiently large, typically ECD dependent
 pad = round(distance_considered / dx);
 
 % Grain boundaries of Al-Al not on the map edges
@@ -242,8 +257,8 @@ gb2_al = gb2_al(~any(gb2_al.grainId == 0, 2));
 gb2_idx = 1:size(gb2_al);
 
 % Extract dispersoids to loop over
-dispersoid_condition = grains2.phase == -1 & grains2.ecd <=...
-    dispersoid_threshold;
+dispersoid_condition = (grains2.phase == -1) & (grains2.ecd <=...
+    dispersoid_threshold);
 grains_particles = grains2(dispersoid_condition);
 
 % Number of dispersoids
@@ -251,7 +266,7 @@ n = length(grains_particles);
 
 % Indices of boundaries each particle is within the distance threshold to.
 % 300 deemed a sufficiently large number.
-boundary_idx = repmat(zeros(1, 300, 'int64'), [n, 1]);
+boundary_idx = repmat(zeros(1, 600, 'int64'), [n, 1]);
 
 % Keep track of minimum distance to grain boundary for each particle
 grains2.prop.min_distance_to_gb = -ones(size(grains2));
@@ -323,8 +338,7 @@ boundary_idx_all(dispersoid_condition, :) = boundary_idx2;
 grains2.prop.boundary_idx = boundary_idx_all;
 
 % Assign number of dispersoid particles per boundary segment
-boundary_idx = grains2.boundary_idx;
-boundary_idx_nz = nonzeros(boundary_idx);
+boundary_idx_nz = nonzeros(grains2.boundary_idx);
 [unique_boundary_idx, ~, ic] = unique(boundary_idx_nz);
 particle_counts_present = accumarray(ic, 1);
 particle_counts_all = zeros(size(gb2));
@@ -336,7 +350,7 @@ gb2.prop.n_particles_close = particle_counts_all;
 particles_close_size = zeros(size(gb2_al)); % Al GBs
 particle_sizes = grains_particles.ecd; % Dispersoid sizes
 
-for i=1:n
+for i=1:n % Loop over dispersoids
     gb_idx_i = nonzeros(boundary_idx2(i, :));
     if ~isempty(gb_idx_i)
         for j=1:size(gb_idx_i)
@@ -351,32 +365,34 @@ particles_close_size_all = zeros(size(gb2)); % All GBs
 particles_close_size_all(gb2.isIndexed) = particles_close_size;
 gb2.prop.particles_close_size = particles_close_size_all;
 
-%% Sanity check of particle locations and boundaries of interest
+%% Plots as a sanity check of particle locations and boundaries of interest
 gb2_al = gb2('al', 'al');
 gb3 = gb2_al(ismember(gb2_idx, grains2.boundary_idx));
 
-% Check that grain boundary indices are correct by correlating particle
-% locations with boundary locations
-figure
-plot(grains_particles, 'facecolor', 'r')
-hold on
-plot(gb3('al', 'al'), 'linewidth', 2)
+if to_plot
+    % Check that grain boundary indices are correct by correlating particle
+    % locations with boundary locations
+    figure
+    plot(grains_particles, 'facecolor', 'r')
+    hold on
+    plot(gb3('al', 'al'), 'linewidth', 2)
 
-% Check that number of particles per boundary is correct
-figure
-plot(grains_particles, 'facecolor', 'r')
-hold on
-plot(gb2_al, gb2_al.n_particles_close)
+    % Check that number of particles per boundary is correct
+    figure
+    plot(grains_particles, 'facecolor', 'r')
+    hold on
+    plot(gb2_al, gb2_al.n_particles_close)
 
-% Check assigned minimum distance to grain boundary by ensuring that
-% particles on boundaries and particles within boundaries have correct
-% hues
-figure
-plot(grains2('notIndexed'), grains2('notIndexed').min_distance_to_gb)
-hold on
-plot(gb2_al)
+    % Check assigned minimum distance to grain boundary by ensuring that
+    % particles on boundaries and particles within boundaries have correct
+    % hues
+    figure
+    plot(grains2('notIndexed'), grains2('notIndexed').min_distance_to_gb)
+    hold on
+    plot(gb2_al)
+end
 
-%% Some grain boundary characteristics
+%% ---------- SPECIAL BOUNDARIES: 40 deg<111> (CSL7) and 60 deg<111> (CSL3)
 % Number of dispersoids per boundary of interest
 gb_component1 = zeros([1, length(gb2)]);
 gb_component2 = zeros([1, length(gb2)]);
@@ -401,34 +417,36 @@ export(gb2_al.misorientation, fullfile(dir_mtex, 'mori_gb_all.txt'), 'quaternion
 mori_particles = gb2_al(gb2_al.n_particles_close > 0).misorientation;
 export(mori_particles, fullfile(dir_mtex, 'mori_gb_with_particles.txt'), 'quaternion', 'radians');
 
-%% -------------------------- SPECIAL ORIENTATION RELATIONSHIP: 40 deg<111>
-figure
-for i=1:n_ideal
-    grains_i = grains2(ismember(grains2.ideal_ori_id, i));
-    if ~isempty(grains_i)
-        plot(grains_i, 'facecolor', ideal_colors{i}, 'facealpha', 0.25)
+%% Plot special boundaries
+if to_plot
+    figure
+    for i=1:n_ideal
+        grains_i = grains2(ismember(grains2.ideal_ori_id, i));
+        if ~isempty(grains_i)
+            plot(grains_i, 'facecolor', ideal_colors{i}, 'facealpha', 0.25)
+        end
+        hold on
     end
-    hold on
-end
-plot(ebsd2('notIndexed'), 'facecolor', 'k', 'micronBar', 'off')
-plot(gb2, 'linecolor', [0.5, 0.5, 0.5], 'linewidth', 1)
-plot(gb2(gb2.is_csl7), 'linecolor', 'r', 'linewidth', 2)
-legend('hide')
-export_fig(fullfile(dir_mtex, 'grains_ideal_csl7.png'), res)
+    plot(ebsd2('notIndexed'), 'facecolor', 'k', 'micronBar', 'off')
+    plot(gb2, 'linecolor', [0.5, 0.5, 0.5], 'linewidth', 1)
+    plot(gb2(gb2.is_csl7), 'linecolor', 'r', 'linewidth', 2)
+    legend('hide')
+    export_fig(fullfile(dir_mtex, 'grains_ideal_csl7.png'), res)
 
-figure
-for i=1:n_ideal
-    grains_i = grains2(ismember(grains2.ideal_ori_id, i));
-    if ~isempty(grains_i)
-        plot(grains_i, 'facecolor', ideal_colors{i}, 'facealpha', 0.25)
+    figure
+    for i=1:n_ideal
+        grains_i = grains2(ismember(grains2.ideal_ori_id, i));
+        if ~isempty(grains_i)
+            plot(grains_i, 'facecolor', ideal_colors{i}, 'facealpha', 0.25)
+        end
+        hold on
     end
-    hold on
+    plot(ebsd2('notIndexed'), 'facecolor', 'k', 'micronBar', 'off')
+    plot(gb2, 'linecolor', [0.5, 0.5, 0.5], 'linewidth', 1)
+    plot(gb2(gb2.is_csl3), 'linecolor', 'r', 'linewidth', 2)
+    legend('hide')
+    export_fig(fullfile(dir_mtex, 'grains_ideal_csl3.png'), res)
 end
-plot(ebsd2('notIndexed'), 'facecolor', 'k', 'micronBar', 'off')
-plot(gb2, 'linecolor', [0.5, 0.5, 0.5], 'linewidth', 1)
-plot(gb2(gb2.is_csl3), 'linecolor', 'r', 'linewidth', 2)
-legend('hide')
-export_fig(fullfile(dir_mtex, 'grains_ideal_csl3.png'), res)
 
 %% ----------------- MISORIENTATIONS OF GRAINS AROUND CONSTITUENT PARTICLES
 grains_particle = grains2('notIndexed');
@@ -530,126 +548,3 @@ dataMat = [...
 ];
 fprintf(fid, '%i,%i,%.10f,%i,%i,%i,%.5f,%i,%i,%i,%i,%10f\n', dataMat');
 fclose(fid);
-
-%% --------------------- ANALYSIS OF COMBINED DATA FROM ALL THREE DATA SETS
-% Misorientations of boundaries
-
-% All
-abcd = [];
-for i=1:3
-    file_i = fullfile(dir_data(1:end-1), num2str(i), 'mtex/mori_gb_all.txt');
-    fid_i = fopen(file_i, 'r');
-    abcd_i = textscan(fid_i, '%f', 'headerlines', 1);
-    fclose(fid_i);
-    abcd = [abcd; abcd_i{1}];
-end
-mori_all = orientation(reshape(abcd, [4, length(abcd) / 4])', cs_al, cs_al);
-mori_all.antipodal = 1;
-
-% With particles
-abcd = [];
-for i=1:3
-    file_i = fullfile(dir_data(1:end-1), num2str(i), 'mtex/mori_gb_with_particles.txt');
-    fid_i = fopen(file_i, 'r');
-    abcd_i = textscan(fid_i, '%f', 'headerlines', 1);
-    fclose(fid_i);
-    abcd = [abcd; abcd_i{1}];
-end
-mori_with_particles = orientation(reshape(abcd, [4, length(abcd) / 4])', cs_al, cs_al);
-mori_with_particles.antipodal = 1;
-
-%% Misorientations of all boundaries and boundaries with particles in
-% axis-angle space
-
-% Axis-angle space of all boundaries
-fz = fundamentalRegion(cs_al, cs_al);
-figure
-plot(fz)
-hold on
-plot(mori_all, 'markersize', 1, 'markercolor', 'k', 'points', length(mori_with_particles))
-
-% Axis-angle space of boundaries with particles
-figure
-plot(fz)
-hold on
-plot(mori_with_particles, 'markersize', 1, 'markercolor', 'k', 'all')
-
-%% Misorientation axis of all boundaries and boundaries with particles
-figure
-plot(mori_all.axis, 'fundamentalRegion', 'contourf')
-mtexColorbar
-caxis([0 2])
-nextAxis
-plot(mori_with_particles.axis, 'fundamentalRegion', 'contourf')
-caxis([0 2])
-
-%% Boundary axes and angles
-angle_all = mori_all.angle / degree;
-mori_all0_15 = mori_all(angle_all <= 15);
-mori_all15_30 = mori_all((angle_all > 15) & (angle_all <= 30));
-mori_all30_45 = mori_all((angle_all > 30) & (angle_all <= 45));
-mori_all45_60 = mori_all(angle_all > 45);
-
-angle_part = mori_with_particles.angle / degree;
-mori_part0_15 = mori_with_particles(angle_part <= 15);
-mori_part15_30 = mori_with_particles((angle_part > 15) & (angle_part <= 30));
-mori_part30_45 = mori_with_particles((angle_part > 30) & (angle_part <= 45));
-mori_part45_60 = mori_with_particles(angle_part > 45);
-
-% Scatter
-figure
-newMtexFigure('layout', [2, 4]);
-plot(mori_all0_15.axis, 'fundamentalRegion', 'markersize', 1, 'markercolor', 'k')
-mtexTitle('0--15$^{\circ}$', 'interpreter', 'latex')
-nextAxis(1, 2)
-plot(mori_all15_30.axis, 'fundamentalRegion', 'markersize', 1, 'markercolor', 'k')
-mtexTitle('15--30$^{\circ}$', 'interpreter', 'latex')
-nextAxis(1, 3)
-plot(mori_all30_45.axis, 'fundamentalRegion', 'markersize', 1, 'markercolor', 'k')
-mtexTitle('30--45$^{\circ}$', 'interpreter', 'latex')
-nextAxis(1, 4)
-plot(mori_all45_60.axis, 'fundamentalRegion', 'markersize', 1, 'markercolor', 'k')
-mtexTitle('$>$ 45$^{\circ}$', 'interpreter', 'latex')
-nextAxis(2, 1)
-plot(mori_part0_15.axis, 'fundamentalRegion', 'markersize', 1, 'markercolor', 'k')
-nextAxis(2, 2)
-plot(mori_part15_30.axis, 'fundamentalRegion', 'markersize', 1, 'markercolor', 'k')
-nextAxis(2, 3)
-plot(mori_part30_45.axis, 'fundamentalRegion', 'markersize', 1, 'markercolor', 'k')
-nextAxis(2, 4)
-plot(mori_part45_60.axis, 'fundamentalRegion', 'markersize', 1, 'markercolor', 'k')
-export_fig(fullfile(dir_data(1:end-1), 'misorientation_boundary_axes_angles_scatter.png'), res)
-
-%% Contour
-clim = [0 3];
-figure
-newMtexFigure('layout', [2, 4]);
-plot(mori_all0_15.axis, 'fundamentalRegion', 'contourf')
-mtexTitle('0--15$^{\circ}$', 'interpreter', 'latex')
-caxis(clim)
-nextAxis(1, 2)
-plot(mori_all15_30.axis, 'fundamentalRegion', 'contourf')
-mtexTitle('15--30$^{\circ}$', 'interpreter', 'latex')
-caxis(clim)
-nextAxis(1, 3)
-plot(mori_all30_45.axis, 'fundamentalRegion', 'contourf')
-mtexTitle('30--45$^{\circ}$', 'interpreter', 'latex')
-caxis(clim)
-nextAxis(1, 4)
-plot(mori_all45_60.axis, 'fundamentalRegion', 'contourf')
-mtexTitle('$>$ 45$^{\circ}$', 'interpreter', 'latex')
-caxis(clim)
-nextAxis(2, 1)
-plot(mori_part0_15.axis, 'fundamentalRegion', 'contourf')
-caxis(clim)
-nextAxis(2, 2)
-plot(mori_part15_30.axis, 'fundamentalRegion', 'contourf')
-caxis(clim)
-nextAxis(2, 3)
-plot(mori_part30_45.axis, 'fundamentalRegion', 'contourf')
-caxis(clim)
-nextAxis(2, 4)
-plot(mori_part45_60.axis, 'fundamentalRegion', 'contourf')
-caxis(clim)
-mtexColorbar
-export_fig(fullfile(dir_data(1:end-1), 'misorientation_boundary_axes_angles_contour.png'), res)
