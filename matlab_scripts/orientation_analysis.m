@@ -1,7 +1,7 @@
 clear variables, close all
 
 % Generate figures?
-to_plot = 1;
+to_plot = 0;
 
 % MTEX configuration
 plotx2east
@@ -17,7 +17,7 @@ cs_al = cs{2};
 ssO = specimenSymmetry('orthorhombic');
 
 % Directory and file names
-dir_data = '/home/hakon/phd/data/p/prover/300c/1';
+dir_data = '/home/hakon/phd/data/p/prover/300c/3';
 disp(dir_data)
 dir_kp = fullfile(dir_data, 'kp');
 dir_mtex = fullfile(dir_data, 'mtex');
@@ -26,18 +26,18 @@ fname_ori = 'xmap_refori2.ang';
 % Read orientation data
 ebsd = EBSD.load(fullfile(dir_kp, fname_ori), cs, 'columnNames', ...
     {'phi1', 'Phi', 'phi2', 'x', 'y', 'ci', 'iq', 'Phase', 'fit',...
-    'detector_signal', 'n_particles', 'r_shift', 'c_shift', 'bse'},...
-    'radians');
-% Align kikuchipy's to MTEX' crystal reference frame
+    'detector_signal', 'n_particles', 'n_pixels'}, 'radians');
+
+% Align kikuchipy's to MTEX' crystal orientation reference frame
 rot_tsl2mtex = rotation.byAxisAngle(xvector - yvector, 180 * degree);
 ebsd = rotate(ebsd, rot_tsl2mtex, 'keepXY');
 
 % Remove unnecessary properties
-ebsd.prop = rmfield(ebsd.prop, {'c_shift', 'detector_signal',...
-    'r_shift', 'ci', 'iq', 'fit'});
+ebsd.prop = rmfield(ebsd.prop, {'detector_signal', 'ci', 'iq', 'fit'});
 
-% Step size
-dx = ebsd.gridify.dx;
+% Step sizes
+dx = ebsd.gridify.dx; % EBSD
+dx_bse = 0.025; % Upscaled BSE image pixel size
 
 % Fix not getting non-indexed points from .ang file properly
 ebsd.phaseMap(1) = -1;
@@ -53,34 +53,28 @@ hab = 15; % Degrees
 
 % Particle classification threshold in microns
 dispersoid_threshold = 0.24;
-constituent_particle_threshold = 1;
+constituent_particle_threshold = 0.8;
 
 % Orientation color keys
 om_al = ipfHSVKey(cs_al);
 om_al.CS2 = ssO;
 
 %% Add GND density (computed elsewhere) to properties
-% Read GND density
 gnd_struct = load(fullfile(dir_mtex, 'gnd.mat'));
 gnd = gnd_struct.gnd;
 
-% Read GND density from denoised data
-gnd_denoise_struct = load(fullfile(dir_mtex, 'gnd_denoise.mat'));
-gnd_denoise = gnd_denoise_struct.gnd;
-
-%% Add property (must be done before grain reconstruction!)
+%% Add property (must be done before subgrain reconstruction!)
 ebsdg = ebsd.gridify;
 ebsdg.prop.gnd = gnd;
-ebsdg.prop.gnd_denoise = gnd_denoise;
 ebsd = ebsdg(~isnan(ebsdg.oldId));
 
-%% Grain reconstruction
+%% Subgrain reconstruction
 ebsd2 = ebsd;
 
 [grains, ebsd2.grainId, ebsd2.mis2mean] = calcGrains(ebsd2, 'angle',...
     mat, 'boundary', 'tight', 'unitCell');
 
-% Assign small Al grains to surrounding grains
+% Assign small Al subgrains to surrounding subgrains
 ebsd3 = ebsd2(grains(grains.grainSize < 5));
 ebsd3 = ebsd3('al');
 ebsd2(ismember(ebsd2.id, ebsd3.id)) = [];
@@ -90,7 +84,13 @@ ebsd2(ismember(ebsd2.id, ebsd3.id)) = [];
 % Add equivalent circular diameter (ECD)
 grains2.prop.ecd = 0.816 * 2 * grains2.equivalentRadius;
 
-% Smooth grain boundaries
+% Add actual size (ECD) of detected particles from unbinned particle map.
+% This is zero for Al subgrains.
+n_particle_pixels = grainMean(ebsd2, ebsd2.n_pixels, grains2, @sum);
+grains2.prop.particle_ecd = 0.816 * 2 * dx_bse *...
+    sqrt(n_particle_pixels / pi);
+
+% Smooth subgrain boundaries
 grains2 = smooth(grains2, 5);
 
 % Remove unnecessary variables
@@ -115,21 +115,6 @@ if to_plot
     legend('hide')
     hold off
     export_fig(fullfile(dir_mtex, 'maps_gnd_gb.png'), res)
-end
-
-%% Plot GNDs (denoised), boundaries and particles
-if to_plot
-    figure
-    plot(ebsd, ebsd.gnd_denoise, 'micronBar', 'off')
-    caxis([1e12 1e15])
-    mtexColorMap LaboTeX
-    hold on
-    plot(ebsd('notIndexed'), 'facecolor', 'k')
-    plot(gb2(gb2Id == 1), 'linecolor', [0.7 0.7 0.7], 'linewidth', 1)
-    plot(gb2(gb2Id == 2), 'linecolor', [0 0 0], 'linewidth', 1);
-    legend('hide')
-    hold off
-    export_fig(fullfile(dir_mtex, 'maps_gnd_denoise_gb.png'), res)
 end
 
 %% Plot orientation maps
@@ -257,7 +242,7 @@ gb2_al = gb2_al(~any(gb2_al.grainId == 0, 2));
 gb2_idx = 1:size(gb2_al);
 
 % Extract dispersoids to loop over
-dispersoid_condition = (grains2.phase == -1) & (grains2.ecd <=...
+dispersoid_condition = (grains2.phase == -1) & (grains2.particle_ecd <=...
     dispersoid_threshold);
 grains_particles = grains2(dispersoid_condition);
 
@@ -346,9 +331,9 @@ particle_counts_all(ismember(gb2_idx, unique_boundary_idx)) =...
     particle_counts_present;
 gb2.prop.n_particles_close = particle_counts_all;
 
-%% Assign size of dispersoid particles per boundary segment
+%% Assign unbinned size (ECD) of dispersoid particles per boundary segment
 particles_close_size = zeros(size(gb2_al)); % Al GBs
-particle_sizes = grains_particles.ecd; % Dispersoid sizes
+particle_sizes = grains_particles.particle_ecd; % Unbinned particle ECD
 
 for i=1:n % Loop over dispersoids
     gb_idx_i = nonzeros(boundary_idx2(i, :));
@@ -454,69 +439,69 @@ grains_particle = grains2('notIndexed');
 % Whether Al grains neighbor a particle
 pairs1 = grains_particle.neighbors('full');
 pairs1 = unique(pairs1);
-grains2.prop.by_particle = (ismember(grains2.id, pairs1)) &...
+grains2.prop.at_particle = (ismember(grains2.id, pairs1)) &...
     (grains2.phase == 1);
 
 % Whether Al grains neighbor a constituent particle
-grains_particle_constituent = grains_particle(grains_particle.ecd >=...
-    constituent_particle_threshold);
+grains_particle_constituent = grains_particle(...
+    grains_particle.particle_ecd >= constituent_particle_threshold);
 pairs1 = grains_particle_constituent.neighbors('full');
 pairs1 = unique(pairs1);
-grains2.prop.by_constituent_particle = (ismember(grains2.id, pairs1)) &...
+grains2.prop.at_constituent_particle = (ismember(grains2.id, pairs1)) &...
     (grains2.phase == 1);
 
 % Whether grain boundary segments neighbor a constituent particle
-gb_is_by_constituent_particle = all(ismember(gb2_ids,...
-    grains2(grains2.by_constituent_particle).id), 2);
-gb2.prop.by_constituent_particle = gb_is_by_constituent_particle;
+gb_is_at_constituent_particle = all(ismember(gb2_ids,...
+    grains2(grains2.at_constituent_particle).id), 2);
+gb2.prop.at_constituent_particle = gb_is_at_constituent_particle;
 
 %% Misorientation angles of Al grains around constituent particles
-gb_constituent = grains2(grains2.by_constituent_particle).boundary('al', 'al');
-gb_other = grains2(~grains2.by_constituent_particle).boundary('al', 'al');
-ids_between = grains2(grains2.by_constituent_particle).id;
+gb_constituent = grains2(grains2.at_constituent_particle).boundary('al', 'al');
+gb_other = grains2(~grains2.at_constituent_particle).boundary('al', 'al');
+ids_between = grains2(grains2.at_constituent_particle).id;
 mask2d = ismember(gb_constituent.grainId, ids_between);
 mask1d = all(mask2d, 2);
 gb_between = gb_constituent(mask1d);
 gb_outwards = gb_constituent(~mask1d);
 
-%% Misorientation angles of grains by constituent particles
-fid = fopen(fullfile(dir_mtex, 'gb_by_constituent_mori_angles.txt'), 'w+');
+%% Misorientation angles of grains at constituent particles
+fid = fopen(fullfile(dir_mtex, 'gb_at_constituent_mori_angles.txt'), 'w+');
 fprintf(fid, '%.5f\n', gb_constituent.misorientation.angle');
 fclose(fid);
 
-% Misorientation angles between grains by constituent particles
-fid = fopen(fullfile(dir_mtex, 'gb_by_constituent_between_mori_angles.txt'), 'w+');
+% Misorientation angles between grains at constituent particles
+fid = fopen(fullfile(dir_mtex, 'gb_at_constituent_between_mori_angles.txt'), 'w+');
 fprintf(fid, '%.5f\n', gb_between.misorientation.angle');
 fclose(fid);
 
-% Misorientation angles outward of grains by constituent particles
-fid = fopen(fullfile(dir_mtex, 'gb_by_constituent_outward_mori_angles.txt'), 'w+');
+% Misorientation angles outward of grains at constituent particles
+fid = fopen(fullfile(dir_mtex, 'gb_at_constituent_outward_mori_angles.txt'), 'w+');
 fprintf(fid, '%.5f\n', gb_outwards.misorientation.angle');
 fclose(fid);
 
-% Misorientation angles of grains NOT by constituent particles
-fid = fopen(fullfile(dir_mtex, 'gb_not_by_constituent_mori_angles.txt'), 'w+');
+% Misorientation angles of grains NOT at constituent particles
+fid = fopen(fullfile(dir_mtex, 'gb_not_at_constituent_mori_angles.txt'), 'w+');
 fprintf(fid, '%.5f\n', gb_other.misorientation.angle');
 fclose(fid);
 
 %% Write all relevant data to file
 fid = fopen(fullfile(dir_mtex, 'grains.txt'), 'w+');
-fprintf(fid, ['#id,phase,size,ideal,gos,gam,gnd,gnd_denoise,'...
-    'by_particle,by_constituent_particle,dist_to_gb\n']);
+fprintf(fid, ['#id,phase,size,particle_ecd,ideal,gos,gam,gnd,'...
+    'at_particle,at_constituent_particle,dist_to_gb\n']);
 dataMat = [...
     grains2.id,...
     grains2.phase,...
     grains2.grainSize,...
+    grains2.particle_ecd,...
     grains2.ideal_ori_id,...
     grains2.GOS,...
     ebsd2.grainMean(ebsd2.KAM),...
     ebsd2.grainMean(ebsd2.gnd),...
-    ebsd2.grainMean(ebsd2.gnd_denoise),...
-    grains2.by_particle,...
-    grains2.by_constituent_particle,...
+    grains2.at_particle,...
+    grains2.at_constituent_particle,...
     grains2.min_distance_to_gb,...
 ];
-fprintf(fid, '%i,%i,%i,%i,%.5f,%.5f,%.5f,%.5f,%i,%i,%.5f\n', dataMat');
+fprintf(fid, '%i,%i,%i,%.5f,%i,%.5f,%.5f,%.5f,%i,%i,%.5f\n', dataMat');
 fclose(fid);
 
 % Grain neighbors
@@ -530,8 +515,8 @@ gb2.prop.is_al = ismember(gb2.grainId(:, 1), al_ids) .*...
     ismember(gb2.grainId(:, 2), al_ids);
 fid = fopen(fullfile(dir_mtex, 'grain_boundaries.txt'), 'w+');
 fprintf(fid, ['id1,id2,angle,is_csl3,is_csl7,n_dispersoids_close,'...
-    'dispersoids_close_size,by_constituent_particle,component1,'...
-    'component2,is_al,length\n']);
+    'dispersoids_close_size,'...
+    'at_constituent_particle,component1,component2,is_al,length\n']);
 dataMat = [...
     gb2.grainId(:, 1),...
     gb2.grainId(:, 2),...
@@ -540,11 +525,12 @@ dataMat = [...
     gb2.is_csl7,...
     gb2.n_particles_close,...
     gb2.particles_close_size,...
-    gb2.by_constituent_particle,...
+    gb2.at_constituent_particle,...
     gb2.component1',...
     gb2.component2',...
     gb2.is_al,...
     gb2.segLength,...
 ];
-fprintf(fid, '%i,%i,%.10f,%i,%i,%i,%.5f,%i,%i,%i,%i,%10f\n', dataMat');
+fprintf(fid, '%i,%i,%.10f,%i,%i,%i,%.5f,%i,%i,%i,%i,%10f\n',...
+    dataMat');
 fclose(fid);
