@@ -2,7 +2,7 @@
 
 Zenodo DOI coming after first `release' of repository.
 
-This repository contains Jupyter notebook files, MATLAB scripts, and other files, apart from the raw BSE images and EBSD datasets, to reproduce the results and figures in the paper *"Correlated subgrain and particle analysis in a recovered Al-Mn alloy by directly combining EBSD and backscatter electron imaging"*, which was recently submitted to the journal X. The paper preprint is available on [arXiv]().
+This repository contains Jupyter notebook files, MATLAB scripts, and other files, apart from the raw BSE images and EBSD datasets, which are necessary to reproduce the results and figures in the paper *"Correlated subgrain and particle analysis of a recovered Al-Mn alloy by directly combining EBSD and backscatter electron imaging"*, which was recently submitted to *Materials Characterization*. The paper preprint is available on [arXiv](). The raw data used in the paper, comprising three EBSD datasets and three sets of four BSE images, is available from Zenodo at [https://doi.org/10.5281/zenodo.6470217](https://doi.org/10.5281/zenodo.6470217).
 
 ## Contents
 
@@ -13,7 +13,7 @@ Static views of the notebooks are available via [`nbviewer`](https://nbviewer.or
 Python packages used in the notebooks are listed in `requirements.txt` and can be installed into for example a conda environment:
 
 ```bash
-conda create -n corr-env python=3.10
+conda create -n corr-env python=3.9
 conda activate corr-env
 pip install -r requirements.txt
 ```
@@ -26,6 +26,8 @@ pip install -r requirements.txt
 * `image_registration.ipynb`: Manually identify control points in BSE images and EBSD intensity maps, perform image registration of BSE and EBSD datasets, and insert particles detected in BSE images and their sizes into EBSD datasets, making up the multimodal datasets.
 * `particle_detection.ipynb`: Detect particles in BSE images and EBSD intensity maps.
 
+Installation of packages has been tested to work on Linux (Ubuntu 22.04) and Windows 10. All notebooks have been tested to work on Linux, while the two indexing and refinement notebooks have also been tested to work on Windows 10.
+
 ### matlab_scripts
 
 MATLAB packages used in the scripts are [MTEX](https://mtex-toolbox.github.io/) and [export_fig](https://se.mathworks.com/matlabcentral/fileexchange/23629-export_fig).
@@ -33,6 +35,6 @@ MATLAB packages used in the scripts are [MTEX](https://mtex-toolbox.github.io/) 
 * `estimate_gnd.m`: Estimate geometrically necessary disloations prior to grain and texture analysis.
 * `orientation_analysis.m`: Correlated analysis of subgrains and particles based on the multimodal dataset, specifically dispersoids at subgrain boundaries and subgrains at constituent particles.
 
-### control_points
+### data
 
-The control points used in image registration are included in this directory, while the raw EBSD datasets and BSE images are available from Zenodo at [https://doi.org/10.5281/zenodo.6470217](https://doi.org/10.5281/zenodo.6470217).
+The control points and processed BSE images (reference images) and EBSD intensity maps (sensed images) used in image registration are included in this directory. The raw EBSD datasets and BSE images are available from Zenodo at [https://doi.org/10.5281/zenodo.6470217](https://doi.org/10.5281/zenodo.6470217).
