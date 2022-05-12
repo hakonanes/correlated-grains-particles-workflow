@@ -2,7 +2,7 @@
 
 Zenodo DOI coming after first `release' of repository.
 
-This repository contains Jupyter notebook files, MATLAB scripts, and other files, apart from the raw BSE images and EBSD datasets, which are necessary to reproduce the results and figures in the paper *"Correlated subgrain and particle analysis of a recovered Al-Mn alloy by directly combining EBSD and backscatter electron imaging"*, which was recently submitted to *Materials Characterization*. The paper preprint is available on [arXiv](). The raw data used in the paper, comprising three EBSD datasets and three sets of four BSE images, is available from Zenodo at [https://doi.org/10.5281/zenodo.6470217](https://doi.org/10.5281/zenodo.6470217).
+This repository contains Jupyter notebook files, MATLAB scripts, and other files, apart from the raw BSE images and EBSD datasets, which are necessary to reproduce the results and figures in the paper *"Correlated subgrain and particle analysis of a recovered Al-Mn alloy by directly combining EBSD and backscatter electron imaging"*, which was recently submitted to *Materials Characterization*. The paper preprint is available on arXiv at [https://doi.org/10.48550/arXiv.2205.05514](https://doi.org/10.48550/arXiv.2205.05514). The raw data used in the paper, comprising three EBSD datasets and three sets of four BSE images, is available from Zenodo at [https://doi.org/10.5281/zenodo.6470217](https://doi.org/10.5281/zenodo.6470217).
 
 ## Contents
 
