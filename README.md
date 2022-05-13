@@ -4,8 +4,6 @@ Zenodo DOI coming after first `release' of repository.
 
 This repository contains Jupyter notebook files, MATLAB scripts, and other files, apart from the raw BSE images and EBSD datasets, which are necessary to reproduce the results and figures in the paper *"Correlated subgrain and particle analysis of a recovered Al-Mn alloy by directly combining EBSD and backscatter electron imaging"*, which was recently submitted to *Materials Characterization*. The paper preprint is available on [arXiv](https://doi.org/10.48550/arXiv.2205.05514). The raw EBSD and BSE data used in the paper is available on [Zenodo](https://doi.org/10.5281/zenodo.6470217).
 
-Note that **this repository** has an MIT license, while the software pacakges might have less permissive licenses.
-
 ## Contents
 
 ### notebooks
