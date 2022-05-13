@@ -10,7 +10,7 @@ Note that **this repository** has an MIT license, while the software pacakges mi
 
 ### notebooks
 
-Static views of the notebooks are available via [nbviewer](https://nbviewer.org/github/hakonanes/correlated-grains-particles-workflow/notebooks).
+Static views of the notebooks are available via [nbviewer](https://nbviewer.org/github/hakonanes/correlated-grains-particles-workflow/tree/main/notebooks/).
 
 Python packages used in the notebooks are listed in `requirements.txt` and can be installed into a virtual or conda environment:
 
