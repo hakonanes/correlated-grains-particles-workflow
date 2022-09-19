@@ -1,8 +1,8 @@
 # Correlated grain/particle analysis from directly combined EBSD/BSE data
 
-Zenodo DOI for this repository coming.
+[![DOI](https://zenodo.org/badge/474996762.svg)](https://zenodo.org/badge/latestdoi/474996762)
 
-This repository contains Jupyter notebook files, MATLAB scripts, and other files, apart from the raw BSE images and EBSD datasets, which are necessary to reproduce the results and figures in the paper *"Correlated subgrain and particle analysis of a recovered Al-Mn alloy by directly combining EBSD and backscatter electron imaging"*, which is published in *Materials Characterization* ([doi](https://doi.org/10.1016/j.matchar.2022.112228)):
+This repository contains Jupyter notebook files, MATLAB scripts, and other files, apart from the raw BSE images and EBSD datasets, which are necessary to reproduce the results and figures in the paper *"Correlated subgrain and particle analysis of a recovered Al-Mn alloy by directly combining EBSD and backscatter electron imaging"*, published in *Materials Characterization* ([doi](https://doi.org/10.1016/j.matchar.2022.112228)):
 
 ```bibtex
 @article{aanes2022correlated,
@@ -18,7 +18,7 @@ This repository contains Jupyter notebook files, MATLAB scripts, and other files
 
 ```
 
-The paper preprint is available on *arXiv* ([doi](https://doi.org/10.48550/arXiv.2205.05514)):
+The preprint is available on *arXiv* ([doi](https://doi.org/10.48550/arXiv.2205.05514)):
 
 ```bibtex
 @article{anes2022correlated_arxiv,
@@ -30,7 +30,7 @@ The paper preprint is available on *arXiv* ([doi](https://doi.org/10.48550/arXiv
 }
 ```
 
-The raw EBSD and BSE data used in the paper is available on *Zenodo* ([doi](https://doi.org/10.5281/zenodo.6470217)):
+The raw EBSD and BSE data is available on *Zenodo* ([doi](https://doi.org/10.5281/zenodo.6470217)):
 
 ```bibtex
 @dataset{aanes2022correlated_data,
